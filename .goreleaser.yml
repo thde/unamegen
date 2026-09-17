@@ -1,3 +1,5 @@
+version: 2
+
 before:
   hooks:
     - go mod tidy
@@ -14,12 +16,13 @@ builds:
 archives:
   - format_overrides:
       - goos: windows
-        format: zip
+        formats:
+          - zip
 brews:
-  - tap:
+  - repository:
       owner: "{{ .Env.GITHUB_REPOSITORY_OWNER }}"
       name: "{{ .ProjectName }}"
-    folder: Formula
+    directory: Formula
     commit_msg_template: "build: update formulae to version {{ .Tag }}"
     homepage: "https://thde.io/{{ .ProjectName }}"
     description: Generate user names with ease

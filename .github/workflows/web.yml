@@ -6,6 +6,10 @@ on:
       - main
   pull_request:
 
+env:
+  # https://github.com/tinygo-org/tinygo/releases
+  TINYGO_VERSION: 0.42.0
+
 jobs:
   release:
     runs-on: ubuntu-latest
@@ -13,19 +17,20 @@ jobs:
       contents: read
       deployments: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
       - name: install tinygo
         run: |
           cd $(mktemp -d)
           curl -sLo tinygo.deb https://github.com/tinygo-org/tinygo/releases/download/v${TINYGO_VERSION}/tinygo_${TINYGO_VERSION}_amd64.deb
           sudo dpkg -i tinygo.deb
-        env:
-          TINYGO_VERSION: 0.30.0
+          tinygo version
       - run: make web
-      - uses: cloudflare/pages-action@v1
+      - uses: cloudflare/wrangler-action@v4
         with:
-          directory: public
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          projectName: ${{ github.event.repository.name }}
           gitHubToken: ${{ secrets.GITHUB_TOKEN }}
+          command: pages deploy public --project-name=${{ github.event.repository.name }}

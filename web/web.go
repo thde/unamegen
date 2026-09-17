@@ -1,4 +1,4 @@
-//go:generate curl -s https://raw.githubusercontent.com/tinygo-org/tinygo/v0.30.0/targets/wasm_exec.js -o wasm_exec.js
+//go:generate curl -s https://raw.githubusercontent.com/tinygo-org/tinygo/v0.42.0/targets/wasm_exec.js -o wasm_exec.js
 package main
 
 import (
@@ -22,7 +22,7 @@ func main() {
 
 	fmt.Println("main()")
 	output.Set("innerText", generate(28, generator))
-	document.Call("getElementById", "generate").Set("onclick", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+	document.Call("getElementById", "generate").Set("onclick", js.FuncOf(func(this js.Value, args []js.Value) any {
 		output.Set("innerText", generate(28, generator))
 		return nil
 	}))
@@ -53,8 +53,8 @@ func table(w io.Writer, input []string, cols int) {
 	format := fmt.Sprintf("%%-%ds%%s ", maxWidth)
 
 	rows := (len(input) + cols - 1) / cols
-	for row := 0; row < rows; row++ {
-		for col := 0; col < cols; col++ {
+	for row := range rows {
+		for col := range cols {
 			i := col*rows + row
 			if i >= len(input) {
 				break // This means the last column is not "full"

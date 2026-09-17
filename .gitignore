@@ -1,5 +1,4 @@
 dist/
 public/
 
-*.gob
-*.gob.*
+cmd/unamegen/en.txt.gz

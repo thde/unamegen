@@ -24,8 +24,13 @@ clean:
 lint:
 	go vet $(shell go list ./... | grep -v /web)
 	GOOS=js GOARCH=wasm go vet ./web
-	staticcheck $(shell go list ./... | grep -v /web)
-	GOOS=js GOARCH=wasm staticcheck ./web
+	go fix -diff $(shell go list ./... | grep -v /web)
+	GOOS=js GOARCH=wasm go fix -diff ./web
+	go tool staticcheck $(shell go list ./... | grep -v /web)
+	# Run the host-built staticcheck binary directly: a GOOS/GOARCH prefix on
+	# `go tool` would cross-compile staticcheck itself instead of the analysed packages.
+	GOOS=js GOARCH=wasm $$(go tool -n staticcheck) ./web
+	go mod tidy -diff
 
 test:
 	go test $(shell go list ./... | grep -v /web)

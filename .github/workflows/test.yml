@@ -16,19 +16,12 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: WillAbides/setup-go-faster@v1.14.0
-        with:
-          go-version: ^1.18
-      - run: go install honnef.co/go/tools/cmd/staticcheck@latest
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 1
-      - uses: actions/cache@v3
+      - uses: actions/setup-go@v7
         with:
-          path: ~/go/pkg/mod
-          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-          restore-keys: |
-            ${{ runner.os }}-go-
+          go-version-file: go.mod
       - run: go mod download -x
       - run: go generate ./...
       - run: make lint

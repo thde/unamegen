@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"compress/gzip"
 	_ "embed"
-	"encoding/gob"
 	"fmt"
 	"io"
 	"os"
@@ -16,9 +15,9 @@ import (
 	"thde.io/fakeword"
 )
 
-//go:generate sh -c "head -n 3000 ../../dictionaries/en.txt | go run ../calculate/calculate.go --gzip > en.gob.gz"
+//go:generate go run gen.go -n 3000
 
-//go:embed en.gob.gz
+//go:embed en.txt.gz
 var en []byte
 
 var (
@@ -50,8 +49,8 @@ func run() error {
 		if err != nil {
 			return fmt.Errorf("amount error: %w", err)
 		}
-		if amount <= 0 {
-			return fmt.Errorf("amount '%d' is equal or smaller than 0", amount)
+		if a <= 0 {
+			return fmt.Errorf("amount '%d' is equal or smaller than 0", a)
 		}
 
 		amount = a
@@ -61,35 +60,35 @@ func run() error {
 		return fmt.Errorf("min larger than max")
 	}
 
-	var w fakeword.Generator
+	var words io.Reader
 	if *in == "" {
-		reader, err := gzip.NewReader(bytes.NewBuffer(en))
+		reader, err := gzip.NewReader(bytes.NewReader(en))
 		if err != nil {
 			return fmt.Errorf("internal words parsing error: %w", err)
 		}
-
-		dec := gob.NewDecoder(reader)
-		dec.Decode(&w)
+		defer reader.Close()
+		words = reader
 	} else {
 		file, err := os.Open(*in)
 		if err != nil {
 			return fmt.Errorf("file %s: %w", *in, err)
 		}
 		defer file.Close()
-
-		p := fakeword.Dictionary{}
-		w = p.Read(file).Generator()
+		words = file
 	}
 
-	words := []string{}
-	for i := 0; amount < 0 || i < amount; i++ {
-		words = append(words, w.WordWithDistance(*min, *max))
+	p := fakeword.Dictionary{}
+	w := p.Read(words).Generator()
+
+	generated := []string{}
+	for i := 0; i < amount; i++ {
+		generated = append(generated, w.WordWithDistance(*min, *max))
 	}
 
 	if *noColumns {
-		fmt.Println(strings.Join(words, "\n"))
+		fmt.Println(strings.Join(generated, "\n"))
 	} else {
-		table(os.Stdout, words, 4)
+		table(os.Stdout, generated, 4)
 	}
 
 	return nil
@@ -105,8 +104,8 @@ func table(w io.Writer, input []string, cols int) {
 	format := fmt.Sprintf("%%-%ds%%s ", maxWidth)
 
 	rows := (len(input) + cols - 1) / cols
-	for row := 0; row < rows; row++ {
-		for col := 0; col < cols; col++ {
+	for row := range rows {
+		for col := range cols {
 			i := col*rows + row
 			if i >= len(input) {
 				break // This means the last column is not "full"
